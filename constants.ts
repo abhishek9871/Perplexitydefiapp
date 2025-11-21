@@ -1,4 +1,4 @@
-import { Token, Trade, ChartDataPoint, Vault, Investor, VaultTransaction } from './types';
+import { Token, Trade, ChartDataPoint, Vault, Investor, VaultTransaction, PortfolioAsset, Order, Activity } from './types';
 
 export const TOKENS: Token[] = [
   {
@@ -288,5 +288,77 @@ export const MOCK_VAULT_TRANSACTIONS: VaultTransaction[] = [
     pair: 'ETH/USDC',
     amount: '5.0 ETH',
     pnl: 850.00
+  }
+];
+
+// Portfolio Mock Data
+export const MOCK_PORTFOLIO_ASSETS: PortfolioAsset[] = [
+  {
+    id: '1',
+    name: 'Ethereum',
+    symbol: 'ETH',
+    icon: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAB8DAZosYQxeSnGw9f3rpH4W0_umZ7_R9GCD4DLIKFXmhVp6b_gZv4XOw0Vr4nI-rdD--LoiZv4RoncNAah-UXHXoJRnRjc3wBsiTiiBHQ4dDm_BczD5Qcoz9HTeTX2XItX8gFtn7QNLO8uGsqOkIxjILAWmHyTgT_GBaFz0f66TdvBVAlMrguEuY4k647p9DOoNM-rN5muKz-uEMGyZ2MSX-8eraKTrCr6SRgX78mcZegtfqz1V5vXEdKGEm0v20mNa6AQTlXKkI',
+    balance: '2.5 ETH',
+    value: 8750.00,
+    change24h: 2.5
+  },
+  {
+    id: '2',
+    name: 'USD Coin',
+    symbol: 'USDC',
+    icon: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBE_P2kHKd8tiXjqwWtWwg6AiA75cERB9T_6906f7jN4tHyz_gRuFQ6MKkmbGaIS-1xhFPGNLtv2N0cVboa0W7-RUELujL5EFgIaqrXv69LSzpvOHMiRUNdlcZbMeGPpgkjxcOzmZLtvxavUkbEty1sXC0xEVVbDHzfutInwQBF-fyF4VKPIb7BBIqt58jsNsOJwtgiMehAOSne9fyryAwnsnr5A78x5jSs897XTGAOTNr0NlC1unM5BzQS8JSbyejgFnz0oW0VmpU',
+    balance: '3,595.67 USDC',
+    value: 3595.67,
+    change24h: -0.1
+  },
+  {
+    id: '3',
+    name: 'Vault Shares',
+    symbol: 'stETH-Vault',
+    icon: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCrhX4tYNvo0_YMKSrzdZV9aAV5SDaqGQbOFQg05zLuVbxTXFssaUZNFEGh-zBx3qcUXZebmYSnj8zajsxuiJRzbgcabNGZlPSKMA9sEaLmybHuAb898N5mFB6WRaUHBMm01_IOiQDBEXUBwLTDNG7IYi1lvlvD6-tnxjMlKRSOgQ4sD-oTm2KfRcoWnoPZELHNzLRaNd1TUg_62FXfHvnjDKfGb0j0i-CCPnzA9fBHGMbHPVl2hKetQaQExRIerc4D9nImS52TSqc',
+    balance: '10.0 VS',
+    value: 1234.56,
+    change24h: 5.2
+  }
+];
+
+export const MOCK_OPEN_ORDERS: Order[] = [
+  {
+    id: '#8a2f..e4b1',
+    type: 'BUY',
+    pair: 'ETH/USDC',
+    amount: '0.5 ETH',
+    status: 'Open'
+  }
+];
+
+export const MOCK_ACTIVITIES: Activity[] = [
+  {
+    id: '1',
+    type: 'DEPOSIT',
+    title: 'Deposited USDC',
+    desc: '+1,000.00 USDC',
+    timestamp: '2 hours ago'
+  },
+  {
+    id: '2',
+    type: 'WITHDRAW',
+    title: 'Withdrew ETH',
+    desc: '-0.25 ETH',
+    timestamp: '1 day ago'
+  },
+  {
+    id: '3',
+    type: 'SWAP',
+    title: 'Swapped ETH for USDC',
+    desc: '0.1 ETH → 350.21 USDC',
+    timestamp: '3 days ago'
+  },
+  {
+    id: '4',
+    type: 'STAKE',
+    title: 'Staked in Vault',
+    desc: '+10.0 VS',
+    timestamp: '5 days ago'
   }
 ];

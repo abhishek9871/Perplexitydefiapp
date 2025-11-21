@@ -58,3 +58,30 @@ export interface VaultTransaction {
   amount: string;
   pnl: number;
 }
+
+// New types for Portfolio Dashboard
+export interface PortfolioAsset {
+  id: string;
+  name: string;
+  symbol: string;
+  icon: string;
+  balance: string;
+  value: number;
+  change24h: number;
+}
+
+export interface Order {
+  id: string;
+  type: 'BUY' | 'SELL';
+  pair: string;
+  amount: string;
+  status: 'Open' | 'Filled' | 'Cancelled';
+}
+
+export interface Activity {
+  id: string;
+  type: 'DEPOSIT' | 'WITHDRAW' | 'SWAP' | 'STAKE';
+  title: string;
+  desc: string;
+  timestamp: string;
+}

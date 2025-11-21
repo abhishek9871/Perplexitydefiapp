@@ -4,10 +4,11 @@ import SwapPanel from './components/SwapPanel';
 import TrailingStopPanel from './components/TrailingStopPanel';
 import RecentTrades from './components/RecentTrades';
 import { VaultsPage } from './components/VaultsPage';
+import { PortfolioPage } from './components/PortfolioPage';
 import { TOKENS } from './constants';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'trade' | 'vaults'>('vaults');
+  const [view, setView] = useState<'trade' | 'vaults' | 'portfolio'>('portfolio');
   const [isWalletConnected, setIsWalletConnected] = useState(false);
 
   const btcToken = TOKENS.find(t => t.symbol === 'BTC');
@@ -42,6 +43,12 @@ const App: React.FC = () => {
                >
                  Vaults
                </button>
+               <button 
+                 onClick={() => setView('portfolio')}
+                 className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${view === 'portfolio' ? 'bg-card-light dark:bg-card-dark shadow-sm text-text-light-primary dark:text-text-dark-primary' : 'text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary'}`}
+               >
+                 Portfolio
+               </button>
              </div>
           </div>
 
@@ -58,9 +65,11 @@ const App: React.FC = () => {
 
       {/* Content */}
       <main className="max-w-[1600px] mx-auto">
-        {view === 'vaults' ? (
-          <VaultsPage />
-        ) : (
+        {view === 'vaults' && <VaultsPage />}
+        
+        {view === 'portfolio' && <PortfolioPage />}
+
+        {view === 'trade' && (
           <div className="p-4 md:p-6 lg:p-8 animate-in fade-in duration-300">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Left Column: Chart & Market Data */}
@@ -116,6 +125,17 @@ const App: React.FC = () => {
           >
             <span className={`material-symbols-outlined text-2xl ${view === 'trade' ? 'filled' : ''}`}>candlestick_chart</span>
             <span className="text-[10px] font-bold uppercase tracking-wider">Trade</span>
+          </button>
+          <button 
+            onClick={() => setView('portfolio')}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active:scale-95 ${
+              view === 'portfolio' 
+                ? 'text-primary' 
+                : 'text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary'
+            }`}
+          >
+            <span className={`material-symbols-outlined text-2xl ${view === 'portfolio' ? 'filled' : ''}`}>pie_chart</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">Portfolio</span>
           </button>
         </div>
       </nav>
