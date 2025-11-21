@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { MOCK_PORTFOLIO_ASSETS, MOCK_OPEN_ORDERS, MOCK_ACTIVITIES, generateMockCandles } from '../constants';
-import { createChart, ColorType, AreaSeries, IChartApi } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi } from 'lightweight-charts';
 
 export const PortfolioPage: React.FC = () => {
   const [timeFrame, setTimeFrame] = useState<'7D' | '30D' | '90D' | 'All'>('30D');
@@ -44,7 +44,7 @@ export const PortfolioPage: React.FC = () => {
       handleScale: false,
     });
 
-    const areaSeries = chart.addSeries(AreaSeries, {
+    const areaSeries = chart.addAreaSeries({
       lineColor: '#14B8A6',
       topColor: 'rgba(20, 184, 166, 0.3)',
       bottomColor: 'rgba(20, 184, 166, 0.0)',
@@ -59,7 +59,7 @@ export const PortfolioPage: React.FC = () => {
       value: c.close
     }));
     
-    areaSeries.setData(data);
+    areaSeries.setData(data as any);
     chart.timeScale().fitContent();
 
     chartApiRef.current = chart;

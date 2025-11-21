@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickSeries } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, ISeriesApi } from 'lightweight-charts';
 import { generateMockCandles } from '../constants';
 import { TimeFrame } from '../types';
 
@@ -38,8 +38,8 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ symbol, price, changePercent 
       },
     });
 
-    // FIX: Use addSeries instead of addCandlestickSeries for v5 compatibility
-    const newSeries = chart.addSeries(CandlestickSeries, {
+    // FIX: Use addCandlestickSeries for v4.2.0 compatibility
+    const newSeries = chart.addCandlestickSeries({
       upColor: '#10B981', // Success color
       downColor: '#EF4444', // Error color
       borderVisible: false,
@@ -48,7 +48,7 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ symbol, price, changePercent 
     });
 
     const data = generateMockCandles(100, price);
-    newSeries.setData(data);
+    newSeries.setData(data as any);
 
     chartRef.current = chart;
     seriesRef.current = newSeries;

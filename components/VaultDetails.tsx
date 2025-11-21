@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Vault, VaultTransaction, Investor } from '../types';
 import { MOCK_INVESTORS, MOCK_VAULT_TRANSACTIONS, generateMockCandles } from '../constants';
-import { createChart, ColorType, AreaSeries } from 'lightweight-charts';
+import { createChart, ColorType } from 'lightweight-charts';
 
 interface VaultDetailsProps {
   vault: Vault;
@@ -47,7 +47,7 @@ export const VaultDetails: React.FC<VaultDetailsProps> = ({ vault, onBack }) => 
       },
     });
 
-    const areaSeries = chart.addSeries(AreaSeries, {
+    const areaSeries = chart.addAreaSeries({
       lineColor: '#14B8A6',
       topColor: 'rgba(20, 184, 166, 0.5)',
       bottomColor: 'rgba(20, 184, 166, 0.0)',
@@ -59,7 +59,7 @@ export const VaultDetails: React.FC<VaultDetailsProps> = ({ vault, onBack }) => 
       value: c.close
     }));
     
-    areaSeries.setData(data);
+    areaSeries.setData(data as any);
     chart.timeScale().fitContent();
 
     const handleResize = () => {

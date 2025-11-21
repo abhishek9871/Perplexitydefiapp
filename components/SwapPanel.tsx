@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
+import { useAccount } from 'wagmi';
+import { parseUnits, formatUnits } from 'viem';
 import { TOKENS } from '../constants';
 import { Token } from '../types';
+import { useTokenPrice } from '../src/hooks/useTokenPrice';
+import { PROTOCOL_FEES } from '../src/lib/fees';
+import { trackSwapEvents } from '../src/lib/analytics';
 
 interface SwapPanelProps {
   isWalletConnected: boolean;
@@ -72,15 +77,21 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ isOpen, onClose, onSelect
 };
 
 const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) => {
+  const { isConnected } = useAccount();
+  const { prices, isLoading: pricesLoading } = useTokenPrice();
+  
   const [fromToken, setFromToken] = useState<Token>(TOKENS.find(t => t.symbol === 'ETH') || TOKENS[0]);
   const [toToken, setToToken] = useState<Token>(TOKENS.find(t => t.symbol === 'USDC') || TOKENS[1]);
-  const [amount, setAmount] = useState<string>(''); // Start empty as per screenshot suggestion roughly
+  const [amount, setAmount] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [swapState, setSwapState] = useState<'idle' | 'swapping' | 'success'>('idle');
   const [showSlippage, setShowSlippage] = useState(false);
   
   // Token selection state
   const [selectingSide, setSelectingSide] = useState<'from' | 'to' | null>(null);
+  
+  // Use wallet connection from hook
+  const connected = isConnected || isWalletConnected;
 
   const handleSwapTokens = () => {
     const temp = fromToken;
@@ -96,35 +107,55 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
         setToToken(fromToken);
       }
       setFromToken(token);
+      trackSwapEvents.tokenSelected(token.symbol, 'from');
     } else if (selectingSide === 'to') {
       if (token.symbol === fromToken.symbol) {
         // Swap if selecting the token that is already in 'from'
         setFromToken(toToken);
       }
       setToToken(token);
+      trackSwapEvents.tokenSelected(token.symbol, 'to');
     }
     setSelectingSide(null);
   };
 
+  // Get real-time prices from CoinGecko
+  const fromPrice = prices[fromToken.symbol] || fromToken.price;
+  const toPrice = prices[toToken.symbol] || toToken.price;
+  
+  // Calculate values
+  const amountNum = parseFloat(amount) || 0;
+  const inputUsdValue = amountNum * fromPrice;
+  
+  // Fee calculations (0.20%)
+  const feeAmount = PROTOCOL_FEES.calculateSwapFeeNumber(amountNum);
+  const feeUsdValue = feeAmount * fromPrice;
+  const netAmount = amountNum - feeAmount;
+  const netUsdValue = netAmount * fromPrice;
+  
+  // Estimated output
   const estimatedOutput = amount && !isNaN(parseFloat(amount))
-    ? (parseFloat(amount) * fromToken.price / toToken.price).toFixed(toToken.decimals === 6 ? 2 : 4)
+    ? (netAmount * fromPrice / toPrice).toFixed(toToken.decimals === 6 ? 2 : 4)
     : '0.00';
 
-  const exchangeRate = (fromToken.price / toToken.price).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const exchangeRate = (fromPrice / toPrice).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
   const isValidAmount = parseFloat(amount) > 0;
-  const hasBalance = parseFloat(amount) <= fromToken.balance;
+  const hasBalance = connected ? parseFloat(amount) <= fromToken.balance : true;
 
   const handleSwapAction = () => {
-    if (!isWalletConnected) {
+    if (!connected) {
       onConnect();
       return;
     }
+    
+    // Track preview click
+    trackSwapEvents.previewClicked(fromToken.symbol, toToken.symbol, amount);
 
     setLoading(true);
     setSwapState('swapping');
     
-    // Simulate network delay
+    // Simulate network delay (actual swap will be implemented in Phase 3)
     setTimeout(() => {
       setLoading(false);
       setSwapState('success');
@@ -136,6 +167,16 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
       }, 3000);
     }, 2000);
   };
+  
+  // Track amount changes
+  const handleAmountChange = (value: string) => {
+    if (/^\d*\.?\d*$/.test(value)) {
+      setAmount(value);
+      if (value && parseFloat(value) > 0) {
+        trackSwapEvents.amountEntered(value, fromToken.symbol);
+      }
+    }
+  };
 
   return (
     <div className="relative bg-card-light dark:bg-card-dark rounded-lg border border-border-light dark:border-border-dark p-4 md:p-6 shadow-sm overflow-hidden">
@@ -146,8 +187,8 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
         <div className="flex justify-between mb-1">
           <label className="text-xs text-text-light-secondary dark:text-text-dark-secondary font-medium">From</label>
           <span className="text-xs text-text-light-secondary dark:text-text-dark-secondary flex items-center gap-1">
-             Balance: <span className="text-text-light-primary dark:text-text-dark-primary font-mono">{isWalletConnected ? fromToken.balance : '-'}</span>
-             {isWalletConnected && (
+             Balance: <span className="text-text-light-primary dark:text-text-dark-primary font-mono">{connected ? fromToken.balance.toFixed(4) : '-'}</span>
+             {connected && (
                <button 
                  onClick={() => setAmount(fromToken.balance.toString())}
                  className="text-primary hover:text-primary-hover font-bold cursor-pointer uppercase text-[10px] bg-primary/10 px-1.5 py-0.5 rounded hover:bg-primary/20 transition-colors"
@@ -161,13 +202,9 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
           <input
             type="text"
             value={amount}
-            onChange={(e) => {
-              if (/^\d*\.?\d*$/.test(e.target.value)) {
-                setAmount(e.target.value);
-              }
-            }}
+            onChange={(e) => handleAmountChange(e.target.value)}
             placeholder="0.0"
-            disabled={!isWalletConnected}
+            disabled={!connected}
             className="bg-transparent text-2xl font-medium border-0 p-0 focus:ring-0 w-full font-mono text-text-light-primary dark:text-text-dark-primary outline-none placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button 
@@ -179,6 +216,12 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
             <span className="material-symbols-outlined text-base">expand_more</span>
           </button>
         </div>
+        {/* USD Value Display */}
+        {amount && parseFloat(amount) > 0 && (
+          <div className="text-sm text-text-light-secondary dark:text-text-dark-secondary mt-1">
+            ${inputUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        )}
       </div>
 
       {/* Swap Direction Button */}
@@ -192,12 +235,19 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
       </div>
 
       {/* To Input */}
-      <div className="bg-background-light dark:bg-background-dark p-3 rounded-lg mb-4 border border-transparent focus-within:border-primary/50 transition-colors">
+      <div className="bg-background-light dark:bg-background-dark p-3 rounded-lg mb-3 border border-transparent focus-within:border-primary/50 transition-colors">
         <label className="text-xs text-text-light-secondary dark:text-text-dark-secondary font-medium block mb-1">To (estimated)</label>
         <div className="flex justify-between items-center gap-2">
-          <p className={`text-2xl font-medium font-mono w-full truncate ${amount ? 'text-text-light-primary dark:text-text-dark-primary' : 'text-gray-500'}`}>
-            {estimatedOutput}
-          </p>
+          <div className="flex-1">
+            <p className={`text-2xl font-medium font-mono truncate ${amount ? 'text-text-light-primary dark:text-text-dark-primary' : 'text-gray-500'}`}>
+              {pricesLoading ? 'Loading...' : estimatedOutput}
+            </p>
+            {amount && parseFloat(amount) > 0 && (
+              <div className="text-sm text-text-light-secondary dark:text-text-dark-secondary mt-1">
+                ${(parseFloat(estimatedOutput) * toPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            )}
+          </div>
           <button 
             onClick={() => setSelectingSide('to')}
             className="flex items-center gap-2 bg-card-light dark:bg-card-dark hover:bg-gray-200 dark:hover:bg-gray-700/50 border border-border-light dark:border-border-dark px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm transition-all shrink-0 text-text-light-primary dark:text-text-dark-primary"
@@ -208,6 +258,30 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
           </button>
         </div>
       </div>
+
+      {/* Fee Breakdown */}
+      {amount && parseFloat(amount) > 0 && (
+        <div className="bg-background-light dark:bg-background-dark p-3 rounded-lg mb-3 border border-border-light dark:border-border-dark">
+          <div className="text-xs space-y-1.5">
+            <div className="flex justify-between text-text-light-secondary dark:text-text-dark-secondary">
+              <span>Input Amount:</span>
+              <span className="font-mono">{amountNum.toFixed(4)} {fromToken.symbol} (${inputUsdValue.toFixed(2)})</span>
+            </div>
+            <div className="flex justify-between text-warning">
+              <span>Protocol Fee (0.20%):</span>
+              <span className="font-mono">{feeAmount.toFixed(6)} {fromToken.symbol} (${feeUsdValue.toFixed(2)})</span>
+            </div>
+            <div className="flex justify-between text-text-light-primary dark:text-text-dark-primary font-medium pt-1.5 border-t border-border-light dark:border-border-dark">
+              <span>Net Amount:</span>
+              <span className="font-mono">{netAmount.toFixed(4)} {fromToken.symbol} (${netUsdValue.toFixed(2)})</span>
+            </div>
+            <div className="flex justify-between text-success font-medium pt-1.5 border-t border-border-light dark:border-border-dark">
+              <span>You Receive (est.):</span>
+              <span className="font-mono">{estimatedOutput} {toToken.symbol}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Info / Accordion */}
       <div className="text-xs text-text-light-secondary dark:text-text-dark-secondary mb-4 select-none">
@@ -245,24 +319,24 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
       {/* Action Button */}
       <button 
         onClick={handleSwapAction}
-        disabled={isWalletConnected && (!amount || !isValidAmount || !hasBalance || loading || swapState === 'success')}
+        disabled={connected && (!amount || !isValidAmount || !hasBalance || loading || swapState === 'success')}
         className={`w-full py-3.5 rounded-lg font-bold text-white transition-all duration-200 flex items-center justify-center gap-2
-          ${!isWalletConnected ? 'bg-primary hover:bg-teal-500' : ''}
-          ${isWalletConnected && swapState === 'success' ? 'bg-success hover:bg-success' : ''}
-          ${isWalletConnected && (!amount || !isValidAmount) && swapState !== 'success' ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : ''}
-          ${isWalletConnected && hasBalance && isValidAmount && swapState === 'idle' ? 'bg-primary hover:bg-teal-500 shadow-lg shadow-teal-500/20' : ''}
-          ${isWalletConnected && !hasBalance && amount ? 'bg-error/10 text-error border border-error/50' : ''}
+          ${!connected ? 'bg-primary hover:bg-teal-500' : ''}
+          ${connected && swapState === 'success' ? 'bg-success hover:bg-success' : ''}
+          ${connected && (!amount || !isValidAmount) && swapState !== 'success' ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : ''}
+          ${connected && hasBalance && isValidAmount && swapState === 'idle' ? 'bg-primary hover:bg-teal-500 shadow-lg shadow-teal-500/20' : ''}
+          ${connected && !hasBalance && amount ? 'bg-error/10 text-error border border-error/50' : ''}
         `}
       >
         {swapState === 'swapping' && (
           <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
         )}
         
-        {!isWalletConnected && 'Connect Wallet'}
+        {!connected && 'Connect Wallet'}
         
-        {isWalletConnected && swapState === 'idle' && !amount && 'Enter Amount'}
-        {isWalletConnected && swapState === 'idle' && amount && !hasBalance && 'Insufficient Balance'}
-        {isWalletConnected && swapState === 'idle' && amount && hasBalance && 'Swap'}
+        {connected && swapState === 'idle' && !amount && 'Enter Amount'}
+        {connected && swapState === 'idle' && amount && !hasBalance && 'Insufficient Balance'}
+        {connected && swapState === 'idle' && amount && hasBalance && 'Preview Swap'}
         
         {swapState === 'swapping' && 'Swapping...'}
         
@@ -273,6 +347,13 @@ const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) =
           </>
         )}
       </button>
+      
+      {/* Price Loading Indicator */}
+      {pricesLoading && (
+        <div className="text-xs text-center text-text-light-secondary dark:text-text-dark-secondary mt-2">
+          Loading prices...
+        </div>
+      )}
 
       {/* Token Selector Modal */}
       <TokenSelector 

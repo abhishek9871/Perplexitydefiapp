@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import ChartWidget from './components/ChartWidget';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import TradingChart from './src/components/trading/TradingChart';
 import SwapPanel from './components/SwapPanel';
 import TrailingStopPanel from './components/TrailingStopPanel';
 import RecentTrades from './components/RecentTrades';
@@ -53,12 +54,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-             <button 
-               onClick={handleConnect}
-               className={`${isWalletConnected ? 'bg-primary/10 text-primary border-primary/20' : 'bg-primary text-black hover:opacity-90'} border border-transparent px-4 py-2 rounded-lg text-sm font-bold transition-all`}
-             >
-               {isWalletConnected ? '0x12...8f4A' : 'Connect Wallet'}
-             </button>
+             <ConnectButton chainStatus="icon" showBalance={false} />
           </div>
         </div>
       </header>
@@ -74,11 +70,7 @@ const App: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Left Column: Chart & Market Data */}
               <div className="lg:w-[70%] flex flex-col gap-6">
-                <ChartWidget 
-                  symbol="BTC/USDT" 
-                  price={currentPrice} 
-                  changePercent={2.58} 
-                />
+                <TradingChart coinId="ethereum" height={400} />
               </div>
 
               {/* Right Column: Interaction Panels */}
