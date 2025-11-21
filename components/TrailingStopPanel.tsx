@@ -2,14 +2,34 @@ import React, { useState } from 'react';
 
 interface TrailingStopPanelProps {
   currentPrice: number;
+  isWalletConnected: boolean;
+  onConnect: () => void;
 }
 
-const TrailingStopPanel: React.FC<TrailingStopPanelProps> = ({ currentPrice }) => {
+const TrailingStopPanel: React.FC<TrailingStopPanelProps> = ({ currentPrice, isWalletConnected, onConnect }) => {
   const [trailPercent, setTrailPercent] = useState<number>(5.0);
+  const [orderState, setOrderState] = useState<'idle' | 'creating' | 'success'>('idle');
 
   const stopPrice = currentPrice * (1 - trailPercent / 100);
 
-  // TODO: Connect to TrailingStopManager.sol contract
+  const handleCreateOrder = () => {
+    if (!isWalletConnected) {
+      onConnect();
+      return;
+    }
+
+    setOrderState('creating');
+
+    // Simulate network/contract interaction
+    setTimeout(() => {
+      setOrderState('success');
+      
+      // Reset state after 3 seconds
+      setTimeout(() => {
+        setOrderState('idle');
+      }, 3000);
+    }, 2000);
+  };
 
   return (
     <div className="bg-card-light dark:bg-card-dark rounded-lg border border-border-light dark:border-border-dark p-4 md:p-6 shadow-sm">
@@ -53,8 +73,38 @@ const TrailingStopPanel: React.FC<TrailingStopPanelProps> = ({ currentPrice }) =
         </div>
       </div>
 
-      <button className="w-full bg-card-light dark:bg-card-dark border-2 border-primary text-primary hover:bg-primary hover:text-white py-3 rounded-lg font-bold transition-all duration-200">
-        Create Stop Order
+      <button 
+        onClick={handleCreateOrder}
+        disabled={orderState === 'creating' || orderState === 'success'}
+        className={`w-full py-3 rounded-lg font-bold transition-all duration-200 border-2 flex items-center justify-center gap-2
+          ${!isWalletConnected 
+            ? 'bg-transparent border-primary text-primary hover:bg-primary hover:text-white' 
+            : ''}
+          ${isWalletConnected && orderState === 'idle' 
+            ? 'bg-card-light dark:bg-card-dark border-primary text-primary hover:bg-primary hover:text-white' 
+            : ''}
+          ${orderState === 'creating' 
+            ? 'bg-primary text-white border-primary opacity-80 cursor-wait' 
+            : ''}
+          ${orderState === 'success' 
+            ? 'bg-success text-white border-success' 
+            : ''}
+        `}
+      >
+        {orderState === 'creating' && (
+          <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+        )}
+
+        {!isWalletConnected && 'Connect Wallet to Trade'}
+        
+        {isWalletConnected && orderState === 'idle' && 'Create Stop Order'}
+        {isWalletConnected && orderState === 'creating' && 'Creating Order...'}
+        {isWalletConnected && orderState === 'success' && (
+          <>
+            <span className="material-symbols-outlined text-lg">check_circle</span>
+            Order Created!
+          </>
+        )}
       </button>
     </div>
   );

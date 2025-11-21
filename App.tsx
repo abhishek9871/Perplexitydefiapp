@@ -54,7 +54,11 @@ const App: React.FC = () => {
             isWalletConnected={isWalletConnected} 
             onConnect={handleConnect} 
           />
-          <TrailingStopPanel currentPrice={currentPrice} />
+          <TrailingStopPanel 
+            currentPrice={currentPrice} 
+            isWalletConnected={isWalletConnected}
+            onConnect={handleConnect}
+          />
         </div>
       </div>
 
