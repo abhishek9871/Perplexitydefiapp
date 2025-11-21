@@ -9,6 +9,8 @@ export const PortfolioPage: React.FC = () => {
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [actionState, setActionState] = useState<'idle' | 'deposit' | 'withdraw'>('idle');
+  const [viewingHistory, setViewingHistory] = useState(false);
+  const [processingAssetId, setProcessingAssetId] = useState<string | null>(null);
   
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartApiRef = useRef<IChartApi | null>(null);
@@ -94,6 +96,21 @@ export const PortfolioPage: React.FC = () => {
     setTimeout(() => {
       setActionState('idle');
     }, 2000);
+  };
+
+  const handleViewHistory = () => {
+    setViewingHistory(true);
+    // Simulate loading more history
+    setTimeout(() => {
+      setViewingHistory(false);
+    }, 1500);
+  };
+
+  const handleAssetAction = (id: string) => {
+    setProcessingAssetId(id);
+    setTimeout(() => {
+      setProcessingAssetId(null);
+    }, 1000);
   };
 
   return (
@@ -198,8 +215,16 @@ export const PortfolioPage: React.FC = () => {
                         {asset.change24h >= 0 ? '+' : ''}{asset.change24h}%
                       </td>
                       <td className="py-4 px-4 text-center hidden sm:table-cell">
-                        <button className="text-primary hover:text-primary-hover text-sm font-semibold transition-colors">
-                          {asset.name === 'Vault Shares' ? 'Manage' : 'Trade'}
+                        <button 
+                          onClick={() => handleAssetAction(asset.id)}
+                          disabled={processingAssetId === asset.id}
+                          className="text-primary hover:text-primary-hover text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center min-w-[60px]"
+                        >
+                          {processingAssetId === asset.id ? (
+                            <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
+                          ) : (
+                            asset.name === 'Vault Shares' ? 'Manage' : 'Trade'
+                          )}
                         </button>
                       </td>
                     </tr>
@@ -324,8 +349,17 @@ export const PortfolioPage: React.FC = () => {
                 ))}
               </ul>
             </div>
-            <button className="w-full mt-8 py-2 text-sm font-semibold text-text-secondary hover:text-text-dark border border-border-dark rounded-lg hover:bg-white/5 transition-colors">
-              View All History
+            <button 
+              onClick={handleViewHistory}
+              disabled={viewingHistory}
+              className="w-full mt-8 py-2 text-sm font-semibold text-text-secondary hover:text-text-dark border border-border-dark rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {viewingHistory ? (
+                 <>
+                   <span className="w-3 h-3 border-2 border-text-secondary/30 border-t-text-secondary rounded-full animate-spin"></span>
+                   Loading...
+                 </>
+              ) : 'View All History'}
             </button>
           </div>
         </aside>
