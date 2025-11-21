@@ -38,6 +38,7 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ symbol, price, changePercent 
       },
     });
 
+    // FIX: Use addSeries instead of addCandlestickSeries for v5 compatibility
     const newSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#10B981', // Success color
       downColor: '#EF4444', // Error color
@@ -70,8 +71,8 @@ const ChartWidget: React.FC<ChartWidgetProps> = ({ symbol, price, changePercent 
   // Effect to update data when timeframe changes
   useEffect(() => {
     if (seriesRef.current) {
-      // In a real app, fetch new data here. We'll just regenerate slightly different noise.
       const multiplier = activeTimeFrame === '1H' ? 1 : activeTimeFrame === '4H' ? 4 : 24;
+      // Simulate fetching new data for timeframe
       const data = generateMockCandles(100, price * (1 + (Math.random() * 0.01)));
       seriesRef.current.setData(data);
     }

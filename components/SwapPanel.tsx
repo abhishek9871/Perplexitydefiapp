@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { TOKENS } from '../constants';
 import { Token } from '../types';
 
-const SwapPanel: React.FC = () => {
+interface SwapPanelProps {
+  isWalletConnected: boolean;
+  onConnect: () => void;
+}
+
+const SwapPanel: React.FC<SwapPanelProps> = ({ isWalletConnected, onConnect }) => {
   const [fromToken, setFromToken] = useState<Token>(TOKENS.find(t => t.symbol === 'ETH') || TOKENS[0]);
   const [toToken, setToToken] = useState<Token>(TOKENS.find(t => t.symbol === 'USDC') || TOKENS[1]);
   const [amount, setAmount] = useState<string>('1.5');
@@ -27,9 +32,11 @@ const SwapPanel: React.FC = () => {
   const hasBalance = parseFloat(amount) <= fromToken.balance;
 
   const handleSwapAction = () => {
-    // TODO: Connect wallet logic here
-    // TODO: Contract interaction via Wagmi
-    
+    if (!isWalletConnected) {
+      onConnect();
+      return;
+    }
+
     setLoading(true);
     setSwapState('swapping');
     
@@ -55,13 +62,15 @@ const SwapPanel: React.FC = () => {
         <div className="flex justify-between mb-1">
           <label className="text-xs text-text-light-secondary dark:text-text-dark-secondary font-medium">From</label>
           <span className="text-xs text-text-light-secondary dark:text-text-dark-secondary">
-             Balance: <span className="text-text-light-primary dark:text-text-dark-primary font-mono">{fromToken.balance}</span>
-             <button 
-               onClick={() => setAmount(fromToken.balance.toString())}
-               className="ml-2 text-primary hover:text-primary-hover font-semibold cursor-pointer uppercase text-[10px]"
-             >
-               Max
-             </button>
+             Balance: <span className="text-text-light-primary dark:text-text-dark-primary font-mono">{isWalletConnected ? fromToken.balance : '-'}</span>
+             {isWalletConnected && (
+               <button 
+                 onClick={() => setAmount(fromToken.balance.toString())}
+                 className="ml-2 text-primary hover:text-primary-hover font-semibold cursor-pointer uppercase text-[10px]"
+               >
+                 Max
+               </button>
+             )}
           </span>
         </div>
         <div className="flex justify-between items-center gap-2">
@@ -74,7 +83,8 @@ const SwapPanel: React.FC = () => {
               }
             }}
             placeholder="0.0"
-            className="bg-transparent text-2xl font-medium border-0 p-0 focus:ring-0 w-full font-mono text-text-light-primary dark:text-text-dark-primary outline-none placeholder-gray-500"
+            disabled={!isWalletConnected}
+            className="bg-transparent text-2xl font-medium border-0 p-0 focus:ring-0 w-full font-mono text-text-light-primary dark:text-text-dark-primary outline-none placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button className="flex items-center gap-2 bg-card-light dark:bg-card-dark hover:bg-gray-200 dark:hover:bg-gray-700/50 border border-border-light dark:border-border-dark px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm transition-all shrink-0">
             <img src={fromToken.icon} alt={fromToken.symbol} className="w-5 h-5 rounded-full" />
@@ -145,22 +155,27 @@ const SwapPanel: React.FC = () => {
       {/* Action Button */}
       <button 
         onClick={handleSwapAction}
-        disabled={!amount || !isValidAmount || !hasBalance || loading || swapState === 'success'}
+        disabled={isWalletConnected && (!amount || !isValidAmount || !hasBalance || loading || swapState === 'success')}
         className={`w-full py-3.5 rounded-lg font-bold text-white transition-all duration-200 flex items-center justify-center gap-2
-          ${swapState === 'success' ? 'bg-success hover:bg-success' : ''}
-          ${(!amount || !isValidAmount) && swapState !== 'success' ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : ''}
-          ${hasBalance && isValidAmount && swapState === 'idle' ? 'bg-primary hover:bg-teal-500 shadow-lg shadow-teal-500/20' : ''}
-          ${!hasBalance && amount ? 'bg-error/10 text-error border border-error/50' : ''}
+          ${!isWalletConnected ? 'bg-primary hover:bg-teal-500' : ''}
+          ${isWalletConnected && swapState === 'success' ? 'bg-success hover:bg-success' : ''}
+          ${isWalletConnected && (!amount || !isValidAmount) && swapState !== 'success' ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : ''}
+          ${isWalletConnected && hasBalance && isValidAmount && swapState === 'idle' ? 'bg-primary hover:bg-teal-500 shadow-lg shadow-teal-500/20' : ''}
+          ${isWalletConnected && !hasBalance && amount ? 'bg-error/10 text-error border border-error/50' : ''}
         `}
       >
         {swapState === 'swapping' && (
           <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
         )}
         
-        {swapState === 'idle' && !amount && 'Enter Amount'}
-        {swapState === 'idle' && amount && !hasBalance && 'Insufficient Balance'}
-        {swapState === 'idle' && amount && hasBalance && 'Swap'}
+        {!isWalletConnected && 'Connect Wallet'}
+        
+        {isWalletConnected && swapState === 'idle' && !amount && 'Enter Amount'}
+        {isWalletConnected && swapState === 'idle' && amount && !hasBalance && 'Insufficient Balance'}
+        {isWalletConnected && swapState === 'idle' && amount && hasBalance && 'Swap'}
+        
         {swapState === 'swapping' && 'Swapping...'}
+        
         {swapState === 'success' && (
           <>
             <span className="material-symbols-outlined">check_circle</span>
