@@ -25,3 +25,18 @@ export interface ChartDataPoint {
 }
 
 export type TimeFrame = '1H' | '4H' | '1D' | '1W' | '1M';
+
+export interface Vault {
+  id: string;
+  name: string;
+  manager: string;
+  managerAvatar?: string;
+  asset: 'ETH' | 'USDC' | 'WBTC';
+  tvl: number;
+  apy: number;
+  weeklyChange: number;
+  investors: number;
+  createdAt: number; // timestamp
+  description?: string;
+  isFeatured?: boolean;
+}

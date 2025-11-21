@@ -3,67 +3,94 @@ import ChartWidget from './components/ChartWidget';
 import SwapPanel from './components/SwapPanel';
 import TrailingStopPanel from './components/TrailingStopPanel';
 import RecentTrades from './components/RecentTrades';
+import { VaultsPage } from './components/VaultsPage';
 import { TOKENS } from './constants';
 
 const App: React.FC = () => {
-  // Using BTC mock data for main view
-  const btcToken = TOKENS.find(t => t.symbol === 'BTC');
-  const currentPrice = btcToken ? btcToken.price : 68420.69;
-  
+  const [view, setView] = useState<'trade' | 'vaults'>('vaults');
   const [isWalletConnected, setIsWalletConnected] = useState(false);
 
+  const btcToken = TOKENS.find(t => t.symbol === 'BTC');
+  const currentPrice = btcToken ? btcToken.price : 68420.69;
+
   const handleConnect = () => {
-    // Mock connection
     setIsWalletConnected(true);
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto">
-      {/* Top Navigation Stub */}
-      <header className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-2">
-           <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center text-white font-bold">H</div>
-           <span className="text-xl font-bold tracking-tight text-text-light-primary dark:text-text-dark-primary">Hyper-DEX</span>
-        </div>
-        <div className="flex items-center gap-4">
-           <button className="hidden md:block text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary hover:text-primary">Portfolio</button>
-           <button 
-             onClick={handleConnect}
-             className={`${isWalletConnected ? 'bg-primary/10 text-primary border-primary/20' : 'bg-card-light dark:bg-card-dark border-border-light dark:border-border-dark text-text-light-primary dark:text-text-dark-primary hover:border-primary'} border px-4 py-2 rounded-lg text-sm font-semibold transition-colors`}
-           >
-             {isWalletConnected ? '0x12...8f4A' : 'Connect Wallet'}
-           </button>
+    <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors duration-200">
+      {/* Navigation Bar */}
+      <header className="sticky top-0 z-30 bg-card-light/80 dark:bg-card-dark/80 backdrop-blur-md border-b border-border-light dark:border-border-dark">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-8">
+             <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">H</div>
+                <span className="text-xl font-bold tracking-tight text-text-light-primary dark:text-text-dark-primary font-display">Hyper-DEX</span>
+             </div>
+             
+             {/* Nav Links */}
+             <div className="hidden md:flex items-center gap-1 bg-gray-100 dark:bg-black/20 p-1 rounded-lg">
+               <button 
+                 onClick={() => setView('trade')}
+                 className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${view === 'trade' ? 'bg-card-light dark:bg-card-dark shadow-sm text-text-light-primary dark:text-text-dark-primary' : 'text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary'}`}
+               >
+                 Trade
+               </button>
+               <button 
+                 onClick={() => setView('vaults')}
+                 className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${view === 'vaults' ? 'bg-card-light dark:bg-card-dark shadow-sm text-text-light-primary dark:text-text-dark-primary' : 'text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary'}`}
+               >
+                 Vaults
+               </button>
+             </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+             <button 
+               onClick={handleConnect}
+               className={`${isWalletConnected ? 'bg-primary/10 text-primary border-primary/20' : 'bg-primary text-black hover:opacity-90'} border border-transparent px-4 py-2 rounded-lg text-sm font-bold transition-all`}
+             >
+               {isWalletConnected ? '0x12...8f4A' : 'Connect Wallet'}
+             </button>
+          </div>
         </div>
       </header>
 
-      {/* Main Grid */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        
-        {/* Left Column: Chart & Market Data */}
-        <div className="lg:w-[70%] flex flex-col gap-6">
-          <ChartWidget 
-            symbol="BTC/USDT" 
-            price={currentPrice} 
-            changePercent={2.58} 
-          />
-        </div>
+      {/* Content */}
+      <main className="max-w-[1600px] mx-auto">
+        {view === 'vaults' ? (
+          <VaultsPage />
+        ) : (
+          <div className="p-4 md:p-6 lg:p-8">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Left Column: Chart & Market Data */}
+              <div className="lg:w-[70%] flex flex-col gap-6">
+                <ChartWidget 
+                  symbol="BTC/USDT" 
+                  price={currentPrice} 
+                  changePercent={2.58} 
+                />
+              </div>
 
-        {/* Right Column: Interaction Panels */}
-        <div className="lg:w-[30%] flex flex-col gap-6">
-          <SwapPanel 
-            isWalletConnected={isWalletConnected} 
-            onConnect={handleConnect} 
-          />
-          <TrailingStopPanel 
-            currentPrice={currentPrice} 
-            isWalletConnected={isWalletConnected}
-            onConnect={handleConnect}
-          />
-        </div>
-      </div>
+              {/* Right Column: Interaction Panels */}
+              <div className="lg:w-[30%] flex flex-col gap-6">
+                <SwapPanel 
+                  isWalletConnected={isWalletConnected} 
+                  onConnect={handleConnect} 
+                />
+                <TrailingStopPanel 
+                  currentPrice={currentPrice} 
+                  isWalletConnected={isWalletConnected}
+                  onConnect={handleConnect}
+                />
+              </div>
+            </div>
 
-      {/* Bottom Section: Trades */}
-      <RecentTrades />
+            {/* Bottom Section: Trades */}
+            <RecentTrades />
+          </div>
+        )}
+      </main>
     </div>
   );
 };

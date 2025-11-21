@@ -6,9 +6,10 @@
     <title>Hyper-DEX | Advanced DeFi Trading</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script>
       tailwind.config = {
         darkMode: "class",
@@ -25,14 +26,21 @@
               "text-dark-primary": "#F5F5F5",
               "text-light-secondary": "#737373",
               "text-dark-secondary": "#A3A3A3",
-              "border-light": "#E5E5E5",
+              "border-light": "rgba(0,0,0,0.1)",
               "border-dark": "rgba(255,255,255,0.1)",
               success: "#10B981",
               error: "#EF4444",
+              // Mockup specific aliases
+              "text-light": "#171717",
+              "text-dark": "#F5F5F5",
             },
             fontFamily: {
               sans: ["Inter", "sans-serif"],
               mono: ["JetBrains Mono", "monospace"],
+              display: ["Space Grotesk", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.75rem", // 12px
             },
           },
         },
@@ -60,8 +68,9 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #4A5568;
       }
-      .material-symbols-outlined {
+      .material-symbols-outlined, .material-icons-outlined {
         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
       }
     </style>
   <script type="importmap">
@@ -75,7 +84,7 @@
 }
 </script>
 </head>
-  <body class="bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary transition-colors duration-200">
+  <body class="bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary transition-colors duration-200 font-display">
     <div id="root"></div>
   </body>
 </html>
