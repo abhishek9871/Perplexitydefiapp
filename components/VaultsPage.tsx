@@ -50,11 +50,16 @@ export const VaultsPage: React.FC = () => {
       });
   }, [searchQuery, sortBy, assetFilter]);
 
+  const handleInvestInFeatured = () => {
+    console.log("Opening featured vault:", featuredVault.name);
+    setSelectedVault(featuredVault);
+  };
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 font-display text-text-light dark:text-text-dark">Featured Vault</h1>
       
-      <FeaturedVault vault={featuredVault} onInvest={() => setSelectedVault(featuredVault)} />
+      <FeaturedVault vault={featuredVault} onInvest={handleInvestInFeatured} />
 
       <div className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-center">
@@ -62,7 +67,7 @@ export const VaultsPage: React.FC = () => {
           <div className="relative" ref={sortDropdownRef}>
             <button 
               onClick={() => setIsSortOpen(!isSortOpen)}
-              className="flex items-center justify-between w-full bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-lg px-4 h-[52px] focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+              className={`flex items-center justify-between w-full bg-card-light dark:bg-card-dark border ${isSortOpen ? 'border-primary ring-1 ring-primary' : 'border-border-light dark:border-border-dark'} rounded-lg px-4 h-[52px] focus:outline-none transition-all`}
             >
               <div className="flex items-center">
                 <span className="text-sm text-text-light/70 dark:text-text-dark/70 mr-2">Sort by:</span>
@@ -74,7 +79,7 @@ export const VaultsPage: React.FC = () => {
             </button>
 
             {isSortOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top py-1">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top">
                 {(['Performance', 'TVL', 'APY', 'Newest'] as const).map((option) => (
                   <button
                     key={option}

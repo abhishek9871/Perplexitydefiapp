@@ -38,8 +38,11 @@ export const FeaturedVault: React.FC<FeaturedVaultProps> = ({ vault, onInvest })
         </div>
         
         <button 
-          onClick={onInvest}
-          className="w-full sm:w-auto bg-primary text-black font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            onInvest();
+          }}
+          className="w-full sm:w-auto bg-primary text-black font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 cursor-pointer"
         >
           Invest Now
         </button>
