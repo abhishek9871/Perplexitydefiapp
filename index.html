@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <script>
       tailwind.config = {
@@ -17,7 +17,7 @@
           extend: {
             colors: {
               primary: "#14B8A6", // Teal 500
-              "primary-hover": "#0D9488", // Teal 600
+              "primary-hover": "#11a393",
               "background-light": "#F5F5F5",
               "background-dark": "#0A0E13",
               "card-light": "#FFFFFF",
@@ -25,14 +25,20 @@
               "text-light-primary": "#171717",
               "text-dark-primary": "#F5F5F5",
               "text-light-secondary": "#737373",
-              "text-dark-secondary": "#A3A3A3",
+              "text-dark-secondary": "#94A3B8", // Updated to match mockup
               "border-light": "rgba(0,0,0,0.1)",
               "border-dark": "rgba(255,255,255,0.1)",
-              success: "#10B981",
-              error: "#EF4444",
+              success: "#22C55E", // Updated to match positive
+              error: "#EF4444", // Updated to match negative
               // Mockup specific aliases
               "text-light": "#171717",
               "text-dark": "#F5F5F5",
+              "text-secondary": "#94A3B8",
+              background: '#0A0E13',
+              card: '#151A21',
+              positive: '#22C55E',
+              negative: '#EF4444',
+              border: 'rgba(255,255,255,0.1)',
             },
             fontFamily: {
               sans: ["Inter", "sans-serif"],
@@ -41,6 +47,8 @@
             },
             borderRadius: {
               DEFAULT: "0.75rem", // 12px
+              lg: '0.75rem',
+              xl: '1rem',
             },
           },
         },
@@ -68,7 +76,7 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #4A5568;
       }
-      .material-symbols-outlined, .material-icons-outlined {
+      .material-symbols-outlined {
         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         vertical-align: middle;
       }
@@ -84,7 +92,7 @@
 }
 </script>
 </head>
-  <body class="bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary transition-colors duration-200 font-display">
+  <body class="bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary transition-colors duration-200 font-sans">
     <div id="root"></div>
   </body>
 </html>

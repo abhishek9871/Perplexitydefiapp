@@ -1,4 +1,4 @@
-import { Token, Trade, ChartDataPoint, Vault } from './types';
+import { Token, Trade, ChartDataPoint, Vault, Investor, VaultTransaction } from './types';
 
 export const TOKENS: Token[] = [
   {
@@ -61,17 +61,17 @@ export const generateMockCandles = (count: number, startPrice: number): ChartDat
 export const MOCK_VAULTS: Vault[] = [
   {
     id: '1',
-    name: 'AlphaBlue Chip Momentum',
-    manager: '0x4b...a2ef',
-    managerAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCH7RmxvHMzXsY_aiNdG7YgliIOzbKcDll-Lih34f84TPwpTCNzoiV8N2CYH5vmEZTjMBzjMWx4ymCK9U0zSGl3m2MrUCJWzOD4l91JHXy7x5CzlvkD5CwTL8uVLQtI-1-s8OFiQnFD2Ka6BFrxHwpVCD6TbpzQGCxSC1VMQgwzWJhKkSGxUN81UnEIu-_qPG-RD932F8U4cvq0k944c3-9h5U5Hs_syMLOY4cbmbMKdCZZxB3UP1E5UL9T1AGPzsRDjHKwi8bjogI',
-    asset: 'ETH',
-    tvl: 1200000,
-    apy: 45.6,
-    weeklyChange: 12.5,
+    name: 'Alpha Wave',
+    manager: 'CryptoKing',
+    managerAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqR-rn1QfWMGExbIBE0JSNgJXSX1KA98Ufgkkie5Xca9o_emVEj4fw8x7Mp3U0UsvbfcufCt939mBhxtRIw0mUWHhY8oLA6rw_gz67EXMXO9r_npL_NneW8ZPNpFnYMZlkbvMCvgMHV3m5XzS7CyvbW7ywgL6ZIcy_9n-Yrfn1mAkiICy3nlt4XZqzMFETnWyU2SYkwvZL10IU2jgzeYmlvSOgX8PjSBfrKQj_2Yg1f99ZRSqVE0uhr38383oltp6wp_gFN868vcM',
+    asset: 'USDC',
+    tvl: 1234567,
+    apy: 25.8,
+    weeklyChange: 5.42,
     investors: 450,
     createdAt: Date.now() - 100000000,
     isFeatured: true,
-    description: "High-conviction momentum strategy focusing on blue-chip DeFi protocols on Arbitrum. Rebalances weekly based on on-chain volume metrics."
+    description: "Expert in high-frequency trading with a focus on major crypto assets. Strategy involves swing trades based on technical analysis and market sentiment."
   },
   {
     id: '2',
@@ -226,5 +226,67 @@ export const MOCK_VAULTS: Vault[] = [
     weeklyChange: 3.5,
     investors: 620,
     createdAt: Date.now() - 400000000
+  }
+];
+
+export const MOCK_INVESTORS: Investor[] = [
+  {
+    id: '1',
+    name: 'VaultMaster',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDqOGJOdbC_fGrPKvV7zVIARXFkJTRaERuKGsVXsX104-YkyRGTGzYxSN62TPwvBtzq1IzLMQrFcHRmTqowSTYThyXm1vJrZzq_2Qs2HbiHbIVUEeAxrEClXUWjYRmLQs0O6WVLe8Va-6jBgP8cQhZKISs1V9dhmb-ybAAwWOgTntrkSX-QBw_hwBnNmkxKa34VMUaNSrUcaSAkZgahedqYzvLSd4DFA8-1WmCW_iKLoKcQE9nxZ-bSSCLHJGiVhywMGRVy4iCpI_8',
+    invested: 50000,
+    pnl: 6250,
+    pnlPercent: 12.5
+  },
+  {
+    id: '2',
+    name: 'DiamondHands',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBBRgbYb3asbtLAMpqnjpKyw7yt2x3xZ84fkrnQIdL66sb7bl1mtISnRu-iZbGCO7vflH1D6ebOnSRFG3UaDAKy_4rLKSuFU7nm4uyGOyWXOQ6Plw-ET9seF0taMEDBtc1KydeRBZgEOlNlJoUv08lF-fpNIEoovTdSR-bi5EnaXbXs3-jx604nWlVUguOCnqOTH-yGXXYpB7cOc_2R10ER-fqD6pbCXBtJN3OmzvI8qCVpvNo7mH9c_4_gClOd3ukytksdzKT08PA',
+    invested: 25000,
+    pnl: 2050,
+    pnlPercent: 8.2
+  },
+  {
+    id: '3',
+    name: 'CryptoWhale',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuByW74BK-L_toKI8qLaK6j8dJbeovZGElZOTwUrZKsoqmc5jD7lMl6UVjJhMk-BuK8WD8H-K_pm3PyUr36uUzCfyEDRdiycqxXDlm4HpkKUJk__G7lQhTQP8i3ZiZ7cb3efSIlYkmpbYEj_xk6N2jUDoS-3_x4koFjvmWT9tcXCegZYExKt0h26qCeJNPWhEnnWnatSGfdqE46-SwO2wUvyAnC7zQ6SH9RqW9EXrz-_ZeJHZcxrSf5aVwKnR5Y6-bw2-nIK8zZR0dY',
+    invested: 15000,
+    pnl: 765,
+    pnlPercent: 5.1
+  }
+];
+
+export const MOCK_VAULT_TRANSACTIONS: VaultTransaction[] = [
+  {
+    id: '1',
+    timeAgo: '2 min ago',
+    type: 'BUY',
+    pair: 'ETH/USDC',
+    amount: '10.5 ETH',
+    pnl: 1230.50
+  },
+  {
+    id: '2',
+    timeAgo: '1 hour ago',
+    type: 'SELL',
+    pair: 'BTC/USDC',
+    amount: '0.5 BTC',
+    pnl: 5400.10
+  },
+  {
+    id: '3',
+    timeAgo: '5 hours ago',
+    type: 'BUY',
+    pair: 'SOL/USDC',
+    amount: '100 SOL',
+    pnl: -250.75
+  },
+  {
+    id: '4',
+    timeAgo: '1 day ago',
+    type: 'SELL',
+    pair: 'ETH/USDC',
+    amount: '5.0 ETH',
+    pnl: 850.00
   }
 ];

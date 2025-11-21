@@ -3,7 +3,7 @@ import { MOCK_VAULTS } from '../constants';
 import { Vault } from '../types';
 import { FeaturedVault } from './FeaturedVault';
 import { VaultCard } from './VaultCard';
-import { VaultDetailsModal } from './VaultDetailsModal';
+import { VaultDetails } from './VaultDetails';
 
 export const VaultsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,12 +51,22 @@ export const VaultsPage: React.FC = () => {
   }, [searchQuery, sortBy, assetFilter]);
 
   const handleInvestInFeatured = () => {
-    console.log("Opening featured vault:", featuredVault.name);
     setSelectedVault(featuredVault);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // If a vault is selected, show details view
+  if (selectedVault) {
+    return (
+      <VaultDetails 
+        vault={selectedVault} 
+        onBack={() => setSelectedVault(null)} 
+      />
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-in fade-in duration-300">
       <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 font-display text-text-light dark:text-text-dark">Featured Vault</h1>
       
       <FeaturedVault vault={featuredVault} onInvest={handleInvestInFeatured} />
@@ -135,7 +145,14 @@ export const VaultsPage: React.FC = () => {
       {filteredVaults.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredVaults.map(vault => (
-            <VaultCard key={vault.id} vault={vault} onViewDetails={setSelectedVault} />
+            <VaultCard 
+              key={vault.id} 
+              vault={vault} 
+              onViewDetails={(v) => {
+                setSelectedVault(v);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }} 
+            />
           ))}
         </div>
       ) : (
@@ -152,11 +169,6 @@ export const VaultsPage: React.FC = () => {
             Clear all filters
           </button>
         </div>
-      )}
-
-      {/* Modal */}
-      {selectedVault && (
-        <VaultDetailsModal vault={selectedVault} onClose={() => setSelectedVault(null)} />
       )}
     </div>
   );

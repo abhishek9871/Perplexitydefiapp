@@ -40,3 +40,21 @@ export interface Vault {
   description?: string;
   isFeatured?: boolean;
 }
+
+export interface Investor {
+  id: string;
+  name: string;
+  avatar: string;
+  invested: number;
+  pnl: number;
+  pnlPercent: number;
+}
+
+export interface VaultTransaction {
+  id: string;
+  timeAgo: string;
+  type: 'BUY' | 'SELL';
+  pair: string;
+  amount: string;
+  pnl: number;
+}
