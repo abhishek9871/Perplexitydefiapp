@@ -110,7 +110,7 @@ export function clearChartCache(): void {
 }
 
 /**
- * Get available timeframes for chart
+ * Legacy day-based timeframes (kept for compatibility)
  */
 export const TIMEFRAMES = [
   { label: '1D', days: 1 },
@@ -121,3 +121,56 @@ export const TIMEFRAMES = [
 ] as const;
 
 export type Timeframe = typeof TIMEFRAMES[number];
+
+/**
+ * Production timeframes with explicit candle resolution (bucketSec) and history window (days)
+ * Note: CoinGecko OHLC provides variable resolutions; we aggregate into these buckets.
+ */
+export interface LiveTimeframe {
+  label: '1m' | '5m' | '15m' | '1h' | '4h' | '1d' | '1w';
+  bucketSec: number;
+  windowDays: 1 | 7 | 30 | 90 | 180 | 365; // limited to CG-supported values
+}
+
+export const TIMEFRAMES_LIVE: LiveTimeframe[] = [
+  { label: '1m', bucketSec: 60, windowDays: 1 },
+  { label: '5m', bucketSec: 300, windowDays: 7 },
+  { label: '15m', bucketSec: 900, windowDays: 30 },
+  { label: '1h', bucketSec: 3600, windowDays: 90 },
+  { label: '4h', bucketSec: 14400, windowDays: 180 },
+  { label: '1d', bucketSec: 86400, windowDays: 365 },
+  { label: '1w', bucketSec: 604800, windowDays: 365 },
+];
+
+/**
+ * Aggregate candles into bucketSec bins.
+ * If input resolution is coarser than bucketSec, the result will be sparse.
+ */
+export function aggregateCandles(
+  input: ChartDataPoint[],
+  bucketSec: number
+): ChartDataPoint[] {
+  if (!Array.isArray(input) || input.length === 0) return [];
+  const buckets = new Map<number, ChartDataPoint>();
+  for (const c of input) {
+    const ts = typeof c.time === 'number' ? c.time : Number(c.time as any);
+    const bucket = Math.floor(ts / bucketSec) * bucketSec;
+    const b = buckets.get(bucket);
+    if (!b) {
+      buckets.set(bucket, {
+        time: bucket as Time,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+      });
+    } else {
+      b.high = Math.max(b.high, c.high);
+      b.low = Math.min(b.low, c.low);
+      b.close = c.close;
+    }
+  }
+  return Array.from(buckets.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([, v]) => v);
+}

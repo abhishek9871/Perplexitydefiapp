@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createChart, ColorType, IChartApi, CandlestickSeriesPartialOptions } from 'lightweight-charts';
-import { getChartData, TIMEFRAMES, Timeframe, ChartDataPoint } from '@/lib/chartService';
+import { getChartData, TIMEFRAMES_LIVE, LiveTimeframe, aggregateCandles, ChartDataPoint } from '@/lib/chartService';
+import { subscribeToPythPriceFeed, PythTickData } from '@/lib/pyth';
 import { trackEvent } from '@/lib/analytics';
 
 interface TradingChartProps {
@@ -20,15 +21,20 @@ const TradingChart: React.FC<TradingChartProps> = ({
   const candlestickSeriesRef = useRef<any>(null);
   const dataRef = useRef<ChartDataPoint[]>([]); // Track data in ref to avoid dependency loop
   const requestIdRef = useRef(0); // Guard to ignore late responses
+  const pythCleanupRef = useRef<null | (() => void)>(null);
+  const firstTickTrackedRef = useRef(false);
   
   // State for UI
-  const [selectedDays, setSelectedDays] = useState<number>(7); // Default to 1 week
+  const [activeCoinId, setActiveCoinId] = useState<string>(coinId);
+  const [selectedTf, setSelectedTf] = useState<LiveTimeframe>(TIMEFRAMES_LIVE[0]); // default 1m
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ChartDataPoint[]>([]);
+  const [liveStatus, setLiveStatus] = useState<'unsupported' | 'connecting' | 'live' | 'offline'>('unsupported');
+  const [seriesReady, setSeriesReady] = useState<boolean>(false);
 
   // Load chart data
-  const loadChartData = useCallback(async (days: number, showLoading: boolean = true) => {
+  const loadChartData = useCallback(async (tf: LiveTimeframe, showLoading: boolean = true) => {
     const reqId = ++requestIdRef.current; // increment request id for this invocation
     try {
       if (showLoading) {
@@ -36,7 +42,8 @@ const TradingChart: React.FC<TradingChartProps> = ({
         setError(null);
       }
 
-      const chartData = await getChartData(coinId, days);
+      const raw = await getChartData(activeCoinId, tf.windowDays);
+      const chartData = aggregateCandles(raw, tf.bucketSec);
       // If a newer request started, ignore this result
       if (reqId !== requestIdRef.current) return;
       
@@ -74,7 +81,7 @@ const TradingChart: React.FC<TradingChartProps> = ({
 
       // Track successful load
       if (showLoading && chartData.length > 0) {
-        trackEvent('Chart', 'Chart Loaded', coinId);
+        trackEvent('Chart', 'Chart Loaded', activeCoinId);
       }
 
     } catch (err) {
@@ -91,12 +98,12 @@ const TradingChart: React.FC<TradingChartProps> = ({
         setIsLoading(false);
       }
     }
-  }, [coinId]);
+  }, [activeCoinId]);
 
   // Handle timeframe change
-  const handleTimeframeChange = useCallback((days: number, label: string) => {
-    setSelectedDays(days);
-    trackEvent('Chart', 'Timeframe Selected', label);
+  const handleTimeframeChange = useCallback((tf: LiveTimeframe) => {
+    setSelectedTf(tf);
+    trackEvent('Chart', 'Timeframe Selected', tf.label);
   }, []);
 
   // Initialize chart (only once, or when height changes)
@@ -154,8 +161,9 @@ const TradingChart: React.FC<TradingChartProps> = ({
       chartRef.current = chart;
       candlestickSeriesRef.current = candlestickSeries;
 
-      // Initial data load - use current selectedDays value
-      loadChartData(selectedDays);
+      // Initial data load - use current selected timeframe
+      loadChartData(selectedTf);
+      setSeriesReady(true);
     };
 
     // Start initialization with a small delay to ensure DOM is ready
@@ -176,11 +184,10 @@ const TradingChart: React.FC<TradingChartProps> = ({
 
   // Handle timeframe changes (only after chart is initialized)
   useEffect(() => {
-    // Only load data if chart is already initialized
     if (chartRef.current && candlestickSeriesRef.current) {
-      loadChartData(selectedDays);
+      loadChartData(selectedTf);
     }
-  }, [selectedDays, loadChartData]);
+  }, [selectedTf, loadChartData]);
 
   // Handle window resize
   useEffect(() => {
@@ -222,15 +229,81 @@ const TradingChart: React.FC<TradingChartProps> = ({
     };
   }, [height]);
 
-  // Auto-refresh every 60 seconds
+  // Live updates via Pyth SDK (if supported for coinId)
+  useEffect(() => {
+    // Clean up any previous subscription
+    pythCleanupRef.current?.();
+    pythCleanupRef.current = null;
+    firstTickTrackedRef.current = false;
+    // Only start once chart/series are ready
+    if (!candlestickSeriesRef.current || !seriesReady) return;
+
+    const cleanup = subscribeToPythPriceFeed(
+      activeCoinId,
+      (tick: PythTickData) => {
+        const candles = dataRef.current;
+        if (!candles || candles.length === 0) return;
+        const bucketSec = selectedTf.bucketSec;
+        const tickTs = Math.floor(tick.time || Date.now() / 1000);
+        const tickBucket = Math.floor(tickTs / bucketSec) * bucketSec;
+        const lastIndex = candles.length - 1;
+        const last = candles[lastIndex];
+        const lastTs = typeof last.time === 'number' ? last.time : Number(last.time as any);
+        const price = tick.price;
+
+        if (tickBucket === lastTs) {
+          // Patch current candle
+          const updated = {
+            time: last.time,
+            open: last.open,
+            high: Math.max(last.high, price),
+            low: Math.min(last.low, price),
+            close: price,
+          } as ChartDataPoint;
+          candles[lastIndex] = updated;
+          dataRef.current = candles;
+          candlestickSeriesRef.current?.update(updated);
+        } else if (tickBucket > lastTs) {
+          // Open a new candle for the next bucket
+          const newBar: ChartDataPoint = {
+            time: tickBucket as any,
+            open: last.close,
+            high: price,
+            low: price,
+            close: price,
+          };
+          candles.push(newBar);
+          dataRef.current = candles;
+          candlestickSeriesRef.current?.update(newBar);
+        }
+
+        setData([...dataRef.current]);
+
+        if (!firstTickTrackedRef.current) {
+          trackEvent('Chart', 'Live Tick Received', activeCoinId);
+          firstTickTrackedRef.current = true;
+        }
+      },
+      (status) => setLiveStatus(status)
+    );
+
+    pythCleanupRef.current = cleanup;
+
+    return () => {
+      pythCleanupRef.current?.();
+      pythCleanupRef.current = null;
+    };
+  }, [activeCoinId, selectedTf.bucketSec, seriesReady]);
+
+  // Auto-refresh historical candles every 60 seconds (live ticks still stream)
   useEffect(() => {
     const refreshInterval = setInterval(() => {
       // Silently refresh data without showing loading state
-      loadChartData(selectedDays, false);
+      loadChartData(selectedTf, false);
     }, 60 * 1000); // 60 seconds
 
     return () => clearInterval(refreshInterval);
-  }, [selectedDays, loadChartData]);
+  }, [selectedTf, loadChartData]);
 
   return (
     <div className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4">
@@ -239,22 +312,39 @@ const TradingChart: React.FC<TradingChartProps> = ({
         <h3 className="text-xl font-semibold text-white">Price Chart</h3>
         <div className="text-sm text-gray-400">
           {coinId.charAt(0).toUpperCase() + coinId.slice(1)}/USD
+          <span className="ml-3 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-gray-600">
+            <span
+              className={
+                liveStatus === 'live'
+                  ? 'inline-block w-2 h-2 rounded-full bg-emerald-400'
+                  : liveStatus === 'connecting'
+                  ? 'inline-block w-2 h-2 rounded-full bg-amber-400'
+                  : liveStatus === 'unsupported'
+                  ? 'inline-block w-2 h-2 rounded-full bg-gray-500'
+                  : 'inline-block w-2 h-2 rounded-full bg-red-500'
+              }
+            />
+            {liveStatus === 'live' && 'Live'}
+            {liveStatus === 'connecting' && 'Connecting…'}
+            {liveStatus === 'offline' && 'Live offline'}
+            {liveStatus === 'unsupported' && 'No live feed'}
+          </span>
         </div>
       </div>
 
-      {/* Timeframe Selector */}
+      {/* Timeframe Selector (live buckets) */}
       <div className="flex gap-2 mb-4">
-        {TIMEFRAMES.map(({ label, days }) => (
+        {TIMEFRAMES_LIVE.map((tf) => (
           <button
-            key={label}
-            onClick={() => handleTimeframeChange(days, label)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedDays === days
+            key={tf.label}
+            onClick={() => handleTimeframeChange(tf)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              selectedTf.label === tf.label
                 ? 'bg-teal-500 text-white'
                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
             }`}
           >
-            {label}
+            {tf.label.toUpperCase()}
           </button>
         ))}
       </div>
@@ -293,7 +383,7 @@ const TradingChart: React.FC<TradingChartProps> = ({
       {data.length > 0 && !isLoading && !error && (
         <div className="mt-4 flex justify-between items-center text-sm text-gray-400">
           <div>
-            {data.length} candles • {TIMEFRAMES.find(tf => tf.days === selectedDays)?.label}
+            {data.length} candles • {selectedTf.label.toUpperCase()}
           </div>
           <div>
             Auto-refresh: 60s
